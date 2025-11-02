@@ -24,7 +24,6 @@
       fd
       bat
       eza
-      zoxide
       dust
 
       # Python stuff
@@ -80,22 +79,26 @@
   # Fish
   programs.fish = {
     enable = true;
-    
+
     interactiveShellInit = ''
       set fish_greeting ""
       krabby random
-      zoxide init fish | source
-      alias cd="z"
     '';
-  
+
     shellAliases = {
       ls = "eza";
       ll = "eza -l";
       la = "eza -la";
       tree = "eza -T";
       cat = "bat";
+      cd = "z";
       rebuild = "sudo darwin-rebuild switch --flake ~/nix-config#air";
     };
+  };
+
+  programs.zoxide = {
+    enable = true;
+    enableFishIntegration = true;
   };
 
   programs.starship = {
