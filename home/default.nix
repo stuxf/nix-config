@@ -45,6 +45,9 @@
 
       # Other useful stuff
       imagemagick
+
+      # YubiKey
+      yubikey-manager
     ])
     ++
     # UNSTABLE packages (update frequently/need latest)
@@ -78,6 +81,26 @@
   programs.gitui.enable = true;
   programs.gh.enable = true;
   programs.gh-dash.enable = true;
+
+  # SSH Configuration
+  programs.ssh = {
+    enable = true;
+
+    extraConfig = ''
+      # macOS keychain integration
+      IgnoreUnknown UseKeychain
+      UseKeychain yes
+      AddKeysToAgent yes
+    '';
+
+    matchBlocks = {
+      "github.com" = {
+        user = "git";
+        identityFile = "~/.ssh/github_ed25519";
+        identitiesOnly = true;
+      };
+    };
+  };
 
   # Fish
   programs.fish = {
