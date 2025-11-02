@@ -20,6 +20,7 @@
 
       # Nix tools
       alejandra # Formatter
+      comma # Run commands without installing
 
       # Modern CLI replacements
       ripgrep
@@ -126,6 +127,11 @@
 
   programs.btop.enable = true;
   programs.yazi = {
+    enable = true;
+    enableFishIntegration = true;
+  };
+
+  programs.nix-index = {
     enable = true;
     enableFishIntegration = true;
   };
