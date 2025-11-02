@@ -82,7 +82,8 @@
     enable = true;
     
     interactiveShellInit = ''
-      set fish_greeting (krabby random)
+      set fish_greeting ""
+      krabby random
       zoxide init fish | source
       alias cd="z"
     '';
