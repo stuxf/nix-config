@@ -58,6 +58,9 @@
 
       # Music
       "spotify"
+
+      # VPN
+      "cloudflare-warp"
     ];
 
     brews = [
