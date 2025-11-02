@@ -1,6 +1,8 @@
-{ pkgs, pkgs-unstable, ... }:
-
 {
+  pkgs,
+  pkgs-unstable,
+  ...
+}: {
   home.stateVersion = "25.05";
 
   home.packages =
@@ -41,7 +43,7 @@
       gitui
 
       # Other useful stuff
-      imagemagick 
+      imagemagick
     ])
     ++
     # UNSTABLE packages (update frequently/need latest)
@@ -49,7 +51,7 @@
       # AI Tools
       claude-code
       codex
-      gemini-cli  
+      gemini-cli
     ]);
 
   programs.helix = {

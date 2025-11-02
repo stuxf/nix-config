@@ -27,54 +27,51 @@
     };
   };
 
-  outputs =
-    {
-      self,
-      nixpkgs,
-      nixpkgs-unstable,
-      nix-darwin,
-      determinate,
-      home-manager,
-      ...
-    }:
-    let
-      username = "user";
-      system = "aarch64-darwin";
+  outputs = {
+    self,
+    nixpkgs,
+    nixpkgs-unstable,
+    nix-darwin,
+    determinate,
+    home-manager,
+    ...
+  }: let
+    username = "user";
+    system = "aarch64-darwin";
 
-      # Unstable packages (for cherry-picking)
-      pkgs-unstable = import nixpkgs-unstable {
-        inherit system;
-        config.allowUnfree = true;
-      };
-    in
-    {
-      darwinConfigurations.air = nix-darwin.lib.darwinSystem {
-        inherit system;
-        modules = [
-          # Determinate module
-          determinate.darwinModules.default
-
-          # Darwin Config
-          ./darwin
-
-          # home-manager module
-          home-manager.darwinModules.home-manager
-          {
-            home-manager = {
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              users.${username} = import ./home;
-              extraSpecialArgs = {inherit pkgs-unstable; };
-            };
-          }
-
-          # Pass username to modules
-          { _module.args = { inherit username; }; }
-        ];
-      };
-
-      # Nix formatter (RFC 166 standard)
-      # Format all Nix files: nix fmt
-      formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-rfc-style;
+    # Unstable packages (for cherry-picking)
+    pkgs-unstable = import nixpkgs-unstable {
+      inherit system;
+      config.allowUnfree = true;
     };
+  in {
+    darwinConfigurations.air = nix-darwin.lib.darwinSystem {
+      inherit system;
+      modules = [
+        # Determinate module
+        determinate.darwinModules.default
+
+        # Darwin Config
+        ./darwin
+
+        # home-manager module
+        home-manager.darwinModules.home-manager
+        {
+          home-manager = {
+            useGlobalPkgs = true;
+            useUserPackages = true;
+            users.${username} = import ./home;
+            extraSpecialArgs = {inherit pkgs-unstable;};
+          };
+        }
+
+        # Pass username to modules
+        {_module.args = {inherit username;};}
+      ];
+    };
+
+    # Nix formatter
+    # Format all Nix files: nix fmt
+    formatter.${system} = nixpkgs.legacyPackages.${system}.alejandra;
+  };
 }

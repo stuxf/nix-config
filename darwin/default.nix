@@ -1,6 +1,8 @@
-{ pkgs, username, ... }:
-
 {
+  pkgs,
+  username,
+  ...
+}: {
   # User configuration
   users.users.${username} = {
     name = username;
@@ -10,7 +12,7 @@
 
   system.primaryUser = username;
 
-  environment.shells = [ pkgs.fish ];
+  environment.shells = [pkgs.fish];
 
   # Allow unfree packages (Discord, spotify, etc.)
   nixpkgs.config.allowUnfree = true;
