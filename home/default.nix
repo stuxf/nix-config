@@ -37,12 +37,6 @@
       xz
       p7zip
 
-      # Git++
-      gh
-      gh-dash
-      lazygit
-      gitui
-
       # Other useful stuff
       imagemagick
 
@@ -146,7 +140,6 @@
       ls = "eza";
       ll = "eza -l";
       la = "eza -la";
-      tree = "eza -T";
       cat = "bat";
       cd = "z";
       rebuild = "sudo darwin-rebuild switch --flake ~/nix-config#air";

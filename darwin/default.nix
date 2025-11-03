@@ -4,7 +4,7 @@
   ...
 }: {
   imports = [
-    ./aerospace.nix
+    ./yabai.nix
     ./system-defaults.nix
   ];
 
@@ -25,6 +25,7 @@
   environment.systemPackages = with pkgs; [
     # Add system-level tools here if needed
     helix
+    tree
   ];
 
   # Let Determinate Nix handle Nix Configuration
@@ -66,15 +67,11 @@
 
       # VPN
       "cloudflare-warp"
-    ];
 
-    brews = [
-      # empty for now
+      # Containers
+      "orbstack"
     ];
   };
-
-  # Enable zsh
-  # programs.zsh.enable = true;
 
   # Enable Fish
   programs.fish.enable = true;
