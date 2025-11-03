@@ -3,6 +3,11 @@
   username,
   ...
 }: {
+  imports = [
+    ./aerospace.nix
+    ./system-defaults.nix
+  ];
+
   # User configuration
   users.users.${username} = {
     name = username;
@@ -73,6 +78,21 @@
 
   # Enable Fish
   programs.fish.enable = true;
+
+  # Touch ID for sudo
+  security.pam.services.sudo_local.touchIdAuth = true;
+
+  # Fonts
+  fonts.packages = with pkgs; [
+    # Nerd Fonts (with icons/glyphs for terminals)
+    nerd-fonts.fira-code
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.meslo-lg
+
+    # Regular versions (optional)
+    fira-code
+    jetbrains-mono
+  ];
 
   # System state version
   system.stateVersion = 6;

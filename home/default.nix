@@ -67,11 +67,37 @@
     enable = true;
     userName = "user";
     userEmail = "70670632+stuxf@users.noreply.github.com";
+
     extraConfig = {
       init.defaultBranch = "main";
       pull.rebase = false;
       core.editor = "hx";
+
+      # Quality of life improvements
+      push.autoSetupRemote = true;
+      fetch.prune = true;
+      diff.algorithm = "histogram";
+      merge.conflictstyle = "diff3";
+      rerere.enabled = true;
+      diff.colorMoved = "default";
     };
+
+    aliases = {
+      st = "status";
+      co = "checkout";
+      br = "branch";
+      ci = "commit";
+      unstage = "reset HEAD --";
+      last = "log -1 HEAD";
+      visual = "log --oneline --graph --all";
+    };
+
+    ignores = [
+      ".DS_Store"
+      "*.swp"
+      "*~"
+      ".direnv/"
+    ];
 
     lfs.enable = true;
   };
@@ -91,6 +117,11 @@
       IgnoreUnknown UseKeychain
       UseKeychain yes
       AddKeysToAgent yes
+
+      # Connection multiplexing for speed
+      ControlMaster auto
+      ControlPath ~/.ssh/sockets/%r@%h-%p
+      ControlPersist 600
     '';
 
     matchBlocks = {
@@ -157,5 +188,9 @@
   programs.nix-index = {
     enable = true;
     enableFishIntegration = true;
+  };
+
+  programs.zellij = {
+    enable = true;
   };
 }
