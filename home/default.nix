@@ -33,6 +33,11 @@
       uv
       python314
 
+      # Node.js development
+      nodejs
+      pnpm
+      just
+
       # Utils
       xz
       p7zip

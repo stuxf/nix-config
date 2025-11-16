@@ -30,7 +30,7 @@
     enable = true;
     skhdConfig = ''
       # open terminal (single instance)
-      alt - return : open -a "Ghostty"
+      alt - return : open -na "Ghostty"
 
       # open browser (new instance)
       alt + shift - return : open -na "Google Chrome"
