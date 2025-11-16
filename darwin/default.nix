@@ -48,6 +48,11 @@
       upgrade = true;
     };
 
+    brews = [
+      "pkg-config"
+      "openssl@3"
+    ];
+
     casks = [
       # Browsers
       "firefox"

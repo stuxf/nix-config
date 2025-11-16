@@ -55,6 +55,13 @@
       claude-code
       codex
       gemini-cli
+
+      # Rust development
+      rustc
+      cargo
+      rustfmt
+      clippy
+      rust-analyzer
     ]);
 
   programs.helix = {
@@ -139,6 +146,7 @@
     interactiveShellInit = ''
       set fish_greeting ""
       krabby random
+      fish_add_path ~/.cargo/bin
     '';
 
     shellAliases = {
