@@ -48,6 +48,10 @@
       upgrade = true;
     };
 
+    taps = [
+      "fastrepl/hyprnote"
+    ];
+
     brews = [
       "pkg-config"
       "openssl@3"
@@ -75,6 +79,16 @@
 
       # Containers
       "orbstack"
+
+      # Dev stuff
+      "antigravity"
+
+      # Local AI
+      "hyprnote"
+      "lm-studio"
+
+      # Recording
+      "loom"
     ];
   };
 
