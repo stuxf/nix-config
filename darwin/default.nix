@@ -83,6 +83,9 @@
       # Dev stuff
       "antigravity"
 
+      # AI
+      "claude"
+
       # Local AI
       "hyprnote"
       "lm-studio"
