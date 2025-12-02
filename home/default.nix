@@ -71,10 +71,11 @@
 
   programs.git = {
     enable = true;
-    userName = "user";
-    userEmail = "70670632+stuxf@users.noreply.github.com";
 
-    extraConfig = {
+    settings = {
+      user.name = "user";
+      user.email = "70670632+stuxf@users.noreply.github.com";
+
       init.defaultBranch = "main";
       pull.rebase = false;
       core.editor = "hx";
@@ -86,16 +87,16 @@
       merge.conflictstyle = "diff3";
       rerere.enabled = true;
       diff.colorMoved = "default";
-    };
 
-    aliases = {
-      st = "status";
-      co = "checkout";
-      br = "branch";
-      ci = "commit";
-      unstage = "reset HEAD --";
-      last = "log -1 HEAD";
-      visual = "log --oneline --graph --all";
+      alias = {
+        st = "status";
+        co = "checkout";
+        br = "branch";
+        ci = "commit";
+        unstage = "reset HEAD --";
+        last = "log -1 HEAD";
+        visual = "log --oneline --graph --all";
+      };
     };
 
     ignores = [
@@ -108,29 +109,34 @@
     lfs.enable = true;
   };
 
-  programs.git.delta.enable = true;
+  programs.delta = {
+    enable = true;
+    enableGitIntegration = true;
+  };
   programs.lazygit.enable = true;
-  programs.gitui.enable = true;
   programs.gh.enable = true;
   programs.gh-dash.enable = true;
 
   # SSH Configuration
   programs.ssh = {
     enable = true;
+    enableDefaultConfig = false;
 
     extraConfig = ''
       # macOS keychain integration
       IgnoreUnknown UseKeychain
       UseKeychain yes
       AddKeysToAgent yes
-
-      # Connection multiplexing for speed
-      ControlMaster auto
-      ControlPath ~/.ssh/sockets/%r@%h-%p
-      ControlPersist 600
     '';
 
     matchBlocks = {
+      "*" = {
+        extraOptions = {
+          ControlMaster = "auto";
+          ControlPath = "~/.ssh/sockets/%r@%h-%p";
+          ControlPersist = "600";
+        };
+      };
       "github.com" = {
         user = "git";
         identityFile = "~/.ssh/github_ed25519";
