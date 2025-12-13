@@ -56,6 +56,9 @@
       codex
       gemini-cli
 
+      # app
+      cloudflared
+
       # Rust development
       rustc
       cargo
