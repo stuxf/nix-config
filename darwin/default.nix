@@ -82,6 +82,7 @@
 
       # Dev stuff
       "antigravity"
+      "android-studio"
 
       # AI
       "claude"
