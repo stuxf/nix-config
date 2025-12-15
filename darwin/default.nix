@@ -55,6 +55,8 @@
     brews = [
       "pkg-config"
       "openssl@3"
+      "gemini-cli"
+      "opencode"
     ];
 
     casks = [
@@ -86,6 +88,10 @@
 
       # AI
       "claude"
+
+      # AI CLI
+      "claude-code"
+      "codex"
 
       # Local AI
       "hyprnote"

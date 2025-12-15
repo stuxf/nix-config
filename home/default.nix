@@ -51,11 +51,6 @@
     ++
     # UNSTABLE packages (update frequently/need latest)
     (with pkgs-unstable; [
-      # AI Tools
-      claude-code
-      codex
-      gemini-cli
-
       # app
       cloudflared
 
