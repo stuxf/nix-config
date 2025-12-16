@@ -150,6 +150,7 @@
     interactiveShellInit = ''
       set fish_greeting ""
       krabby random
+      fish_add_path /opt/homebrew/bin
       fish_add_path ~/.cargo/bin
     '';
 
