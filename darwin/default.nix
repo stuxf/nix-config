@@ -76,6 +76,9 @@
       # Music
       "spotify"
 
+      # Media Player
+      "iina"
+
       # VPN
       "cloudflare-warp"
 
