@@ -102,6 +102,9 @@
 
       # Recording
       "loom"
+
+      # Games
+      "prismlauncher"
     ];
   };
 
