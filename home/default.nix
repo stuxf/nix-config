@@ -36,7 +36,10 @@
       # Node.js development
       nodejs
       pnpm
+      bun
       just
+      nodePackages.typescript
+      nodePackages.typescript-language-server
 
       # Utils
       xz
