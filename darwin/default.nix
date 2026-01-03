@@ -106,6 +106,11 @@
       # Games
       "prismlauncher"
       "steam"
+
+      # Notion core
+      "notion"
+      "notion-mail"
+      "notion-calendar"
     ];
   };
 
