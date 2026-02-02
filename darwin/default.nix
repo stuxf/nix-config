@@ -32,7 +32,7 @@
   nix.enable = false;
 
   # Custom Determinate Settings
-  determinate-nix.customSettings = {
+  determinateNix.customSettings = {
     eval-cores = 0; # Parallel evaluation
     extra-experimental-features = [
       "parallel-eval"
@@ -57,6 +57,7 @@
       "openssl@3"
       "gemini-cli"
       "opencode"
+      "ffmpeg"
     ];
 
     casks = [
@@ -86,7 +87,6 @@
       "orbstack"
 
       # Dev stuff
-      "antigravity"
       "android-studio"
 
       # AI
@@ -106,11 +106,6 @@
       # Games
       "prismlauncher"
       "steam"
-
-      # Notion core
-      "notion"
-      "notion-mail"
-      "notion-calendar"
     ];
   };
 
