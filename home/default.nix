@@ -18,6 +18,12 @@
       tokei
       tealdeer
 
+      # Security scanning
+      trivy
+      osv-scanner
+      syft
+      grype
+
       # Nix tools
       alejandra # Formatter
       comma # Run commands without installing
@@ -40,6 +46,10 @@
       just
       nodePackages.typescript
       nodePackages.typescript-language-server
+
+      # Go development
+      go
+      gopls
 
       # Utils
       xz

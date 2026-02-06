@@ -98,7 +98,6 @@
 
       # Local AI
       "hyprnote"
-      "lm-studio"
 
       # Recording
       "loom"
