@@ -91,6 +91,7 @@
 
       # AI
       "claude"
+      "codex-app"
 
       # AI CLI
       "claude-code"

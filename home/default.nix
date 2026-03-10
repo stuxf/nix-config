@@ -17,6 +17,8 @@
       hyperfine
       tokei
       tealdeer
+      terraform
+      packer
 
       # Security scanning
       trivy
@@ -215,6 +217,10 @@
   };
 
   programs.zellij = {
+    enable = true;
+  };
+
+  programs.tmux = {
     enable = true;
   };
 }
