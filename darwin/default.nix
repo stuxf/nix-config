@@ -124,7 +124,7 @@
 
     # Regular versions (optional)
     fira-code
-    jetbrains-mono
+    # jetbrains-mono
   ];
 
   # System state version
