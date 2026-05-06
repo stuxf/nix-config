@@ -2,7 +2,26 @@
   pkgs,
   pkgs-unstable,
   ...
-}: {
+}: let
+  rustToolchain = pkgs-unstable.rust-bin.stable.latest.default.override {
+    extensions = [
+      "clippy"
+      "rust-analyzer"
+      "rust-src"
+      "rustfmt"
+    ];
+    targets = [
+      "thumbv6m-none-eabi"
+      "thumbv7m-none-eabi"
+      "thumbv7em-none-eabi"
+      "thumbv7em-none-eabihf"
+      "thumbv8m.base-none-eabi"
+      "thumbv8m.main-none-eabi"
+      "thumbv8m.main-none-eabihf"
+      "riscv32imac-unknown-none-elf"
+    ];
+  };
+in {
   home.stateVersion = "25.05";
 
   home.packages =
@@ -70,11 +89,11 @@
       cloudflared
 
       # Rust development
-      rustc
-      cargo
-      rustfmt
-      clippy
-      rust-analyzer
+      rustToolchain
+      probe-rs-tools
+      elf2uf2-rs
+      picotool
+      flip-link
     ]);
 
   programs.helix = {
@@ -166,7 +185,6 @@
       set fish_greeting ""
       krabby random
       fish_add_path /opt/homebrew/bin
-      fish_add_path ~/.cargo/bin
     '';
 
     shellAliases = {

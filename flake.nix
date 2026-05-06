@@ -25,6 +25,12 @@
       url = "https://flakehub.com/f/nix-community/home-manager/0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Rust toolchains with components and cross targets
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
   };
 
   outputs = {
@@ -34,6 +40,7 @@
     nix-darwin,
     determinate,
     home-manager,
+    rust-overlay,
     ...
   }: let
     username = "user";
@@ -43,6 +50,7 @@
     pkgs-unstable = import nixpkgs-unstable {
       inherit system;
       config.allowUnfree = true;
+      overlays = [(import rust-overlay)];
     };
   in {
     darwinConfigurations.air = nix-darwin.lib.darwinSystem {
