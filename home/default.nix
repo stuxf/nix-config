@@ -21,6 +21,10 @@
       "riscv32imac-unknown-none-elf"
     ];
   };
+
+  terraformNoCheck = pkgs.terraform.overrideAttrs (_: {
+    doCheck = false;
+  });
 in {
   home.stateVersion = "25.05";
 
@@ -36,7 +40,7 @@ in {
       hyperfine
       tokei
       tealdeer
-      terraform
+      terraformNoCheck
       packer
 
       # Security scanning
@@ -65,8 +69,8 @@ in {
       pnpm
       bun
       just
-      nodePackages.typescript
-      nodePackages.typescript-language-server
+      typescript
+      typescript-language-server
 
       # Go development
       go
@@ -154,25 +158,19 @@ in {
     enable = true;
     enableDefaultConfig = false;
 
-    extraConfig = ''
-      # macOS keychain integration
-      IgnoreUnknown UseKeychain
-      UseKeychain yes
-      AddKeysToAgent yes
-    '';
-
-    matchBlocks = {
+    settings = {
       "*" = {
-        extraOptions = {
-          ControlMaster = "auto";
-          ControlPath = "~/.ssh/sockets/%r@%h-%p";
-          ControlPersist = "600";
-        };
+        IgnoreUnknown = "UseKeychain";
+        UseKeychain = "yes";
+        AddKeysToAgent = "yes";
+        ControlMaster = "auto";
+        ControlPath = "~/.ssh/sockets/%r@%h-%p";
+        ControlPersist = "600";
       };
       "github.com" = {
-        user = "git";
-        identityFile = "~/.ssh/github_ed25519";
-        identitiesOnly = true;
+        User = "git";
+        IdentityFile = "~/.ssh/github_ed25519";
+        IdentitiesOnly = true;
       };
     };
   };
@@ -227,6 +225,7 @@ in {
   programs.yazi = {
     enable = true;
     enableFishIntegration = true;
+    shellWrapperName = "yy";
   };
 
   programs.nix-index = {

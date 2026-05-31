@@ -80,6 +80,9 @@
       # Media Player
       "iina"
 
+      # Study
+      "anki"
+
       # VPN
       "cloudflare-warp"
 
@@ -88,6 +91,7 @@
 
       # Dev stuff
       "android-studio"
+      "notion-cli"
 
       # AI
       "claude"
