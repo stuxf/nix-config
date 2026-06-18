@@ -48,10 +48,6 @@
       upgrade = true;
     };
 
-    taps = [
-      "fastrepl/hyprnote"
-    ];
-
     brews = [
       "pkg-config"
       "openssl@3"
@@ -100,9 +96,6 @@
       # AI CLI
       "claude-code"
       "codex"
-
-      # Local AI
-      "hyprnote"
 
       # Recording
       "loom"
