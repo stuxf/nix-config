@@ -94,10 +94,6 @@ in {
 
       # Rust development
       rustToolchain
-      probe-rs-tools
-      elf2uf2-rs
-      picotool
-      flip-link
     ]);
 
   programs.helix = {
