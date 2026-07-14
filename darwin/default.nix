@@ -51,8 +51,6 @@
     brews = [
       "pkg-config"
       "openssl@3"
-      "gemini-cli"
-      "opencode"
       "ffmpeg"
     ];
 
