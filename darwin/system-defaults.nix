@@ -1,4 +1,4 @@
-{...}: {
+{username, ...}: {
   system.defaults = {
     dock = {
       autohide = true;
@@ -52,6 +52,6 @@
 
   # Create Screenshots directory
   system.activationScripts.postActivation.text = ''
-    mkdir -p ~/Pictures/Screenshots
+    install -d -o ${username} -g staff "/Users/${username}/Pictures/Screenshots"
   '';
 }

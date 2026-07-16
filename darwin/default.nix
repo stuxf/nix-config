@@ -52,6 +52,7 @@
       "pkg-config"
       "openssl@3"
       "ffmpeg"
+      "container"
     ];
 
     casks = [
