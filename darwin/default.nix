@@ -57,7 +57,6 @@
 
     casks = [
       # Browsers
-      "firefox"
       "google-chrome"
 
       # Terminal
