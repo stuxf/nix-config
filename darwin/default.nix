@@ -101,6 +101,9 @@
       # Games
       "prismlauncher"
       "steam"
+
+      # Game Dev ;)
+      "godot"
     ];
   };
 
