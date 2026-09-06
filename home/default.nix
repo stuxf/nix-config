@@ -3,25 +3,6 @@
   pkgs-unstable,
   ...
 }: let
-  rustToolchain = pkgs-unstable.rust-bin.stable.latest.default.override {
-    extensions = [
-      "clippy"
-      "rust-analyzer"
-      "rust-src"
-      "rustfmt"
-    ];
-    targets = [
-      "thumbv6m-none-eabi"
-      "thumbv7m-none-eabi"
-      "thumbv7em-none-eabi"
-      "thumbv7em-none-eabihf"
-      "thumbv8m.base-none-eabi"
-      "thumbv8m.main-none-eabi"
-      "thumbv8m.main-none-eabihf"
-      "riscv32imac-unknown-none-elf"
-    ];
-  };
-
   terraformNoCheck = pkgs.terraform.overrideAttrs (_: {
     doCheck = false;
   });
@@ -80,6 +61,9 @@ in {
       go
       gopls
 
+      # Rust development
+      rustup
+
       # Utils
       xz
       p7zip
@@ -95,9 +79,6 @@ in {
     (with pkgs-unstable; [
       # app
       cloudflared
-
-      # Rust development
-      rustToolchain
     ]);
 
   programs.helix = {

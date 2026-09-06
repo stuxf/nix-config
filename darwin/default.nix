@@ -36,6 +36,7 @@
 
   determinateNix.customSettings = {
     eval-cores = 0; # Parallel evaluation
+    sandbox = true;
     extra-experimental-features = [
       "parallel-eval"
     ];
@@ -143,6 +144,11 @@
 
   # Touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
+
+  networking.applicationFirewall = {
+    enable = true;
+    enableStealthMode = true;
+  };
 
   # Fonts
   fonts.packages = with pkgs; [

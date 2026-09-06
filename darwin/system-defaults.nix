@@ -12,6 +12,8 @@
       AppleShowAllFiles = true;
       ShowPathbar = true;
       ShowStatusBar = true;
+      FXDefaultSearchScope = "SCcf";
+      FXRemoveOldTrashItems = true;
       _FXShowPosixPathInTitle = true;
       _FXSortFoldersFirst = true;
       FXEnableExtensionChangeWarning = false;
@@ -47,6 +49,11 @@
     screencapture = {
       location = "~/Pictures/Screenshots";
       disable-shadow = true;
+    };
+
+    screensaver = {
+      askForPassword = true;
+      askForPasswordDelay = 5;
     };
   };
 
