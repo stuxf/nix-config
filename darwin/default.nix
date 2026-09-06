@@ -32,11 +32,45 @@
   nix.enable = false;
 
   # Custom Determinate Settings
+  determinateNix.determinateNixd.garbageCollector.strategy = "automatic";
+
   determinateNix.customSettings = {
     eval-cores = 0; # Parallel evaluation
     extra-experimental-features = [
       "parallel-eval"
     ];
+  };
+
+  # Determinate Nix collects unreferenced paths under disk pressure, but leaves
+  # profile generation retention to the user. Expire old generations weekly.
+  launchd.daemons.nix-gc.serviceConfig = {
+    ProgramArguments = [
+      "/nix/var/nix/profiles/default/bin/nix-collect-garbage"
+      "--delete-older-than"
+      "14d"
+    ];
+    StartCalendarInterval = {
+      Weekday = 0;
+      Hour = 3;
+      Minute = 0;
+    };
+    StandardOutPath = "/var/log/nix-gc.log";
+    StandardErrorPath = "/var/log/nix-gc.log";
+  };
+
+  launchd.daemons.nix-optimise.serviceConfig = {
+    ProgramArguments = [
+      "/nix/var/nix/profiles/default/bin/nix"
+      "store"
+      "optimise"
+    ];
+    StartCalendarInterval = {
+      Weekday = 0;
+      Hour = 4;
+      Minute = 0;
+    };
+    StandardOutPath = "/var/log/nix-optimise.log";
+    StandardErrorPath = "/var/log/nix-optimise.log";
   };
 
   homebrew = {
@@ -94,9 +128,6 @@
       # AI CLI
       "claude-code"
       "codex"
-
-      # Recording
-      "loom"
 
       # Games
       "prismlauncher"
