@@ -26,6 +26,10 @@
     doCheck = false;
   });
 in {
+  imports = [
+    ./cache-maintenance.nix
+  ];
+
   home.stateVersion = "25.05";
 
   home.packages =
