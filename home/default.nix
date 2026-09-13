@@ -9,6 +9,7 @@
 in {
   imports = [
     ./cache-maintenance.nix
+    ./default-apps.nix
   ];
 
   home.stateVersion = "25.05";
@@ -65,6 +66,7 @@ in {
       rustup
 
       # Utils
+      duti
       xz
       p7zip
 

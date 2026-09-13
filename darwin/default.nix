@@ -97,6 +97,9 @@
       # Terminal
       "ghostty"
 
+      # Text editor
+      "coteditor"
+
       # Communication
       "vesktop"
       "signal"
@@ -121,6 +124,7 @@
       # Dev stuff
       "android-studio"
       "notion-cli"
+      "tailscale-app"
 
       # AI
       "claude"
