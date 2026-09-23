@@ -3,7 +3,7 @@
   pkgs-unstable,
   ...
 }: let
-  terraformNoCheck = pkgs.terraform.overrideAttrs (_: {
+  terraformNoCheck = pkgs-unstable.terraform.overrideAttrs (_: {
     doCheck = false;
   });
 in {
