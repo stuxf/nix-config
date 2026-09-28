@@ -25,9 +25,15 @@
       url = "https://flakehub.com/f/nix-community/home-manager/0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Catppuccin theming (donk)
+    catppuccin = {
+      url = "github:catppuccin/nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = {
+  outputs = inputs @ {
     self,
     nixpkgs,
     nixpkgs-unstable,
@@ -70,8 +76,28 @@
       ];
     };
 
+    nixosConfigurations.donk = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs username;};
+      modules = [
+        determinate.nixosModules.default
+        ./hosts/donk
+
+        home-manager.nixosModules.home-manager
+        {
+          home-manager = {
+            useGlobalPkgs = true;
+            useUserPackages = true;
+            backupFileExtension = "backup";
+            users.${username} = import ./hosts/donk/home.nix;
+            extraSpecialArgs = {inherit username;};
+          };
+        }
+      ];
+    };
+
     # Nix formatter
     # Format all Nix files: nix fmt
     formatter.${system} = nixpkgs.legacyPackages.${system}.alejandra;
+    formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
   };
 }
