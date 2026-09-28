@@ -19,6 +19,9 @@
       pinentry.package = pkgs.pinentry-gnome3;
     };
 
+    # Lets the ChatGPT app's Chrome plugin talk to Chrome (see pkgs/chatgpt)
+    xdg.configFile."google-chrome/NativeMessagingHosts/com.openai.codexextension.json".source = "${pkgs.chatgpt}/share/chatgpt/native-messaging-hosts/com.openai.codexextension.json";
+
     home.packages = with pkgs; [
       # Chat and media
       vesktop
