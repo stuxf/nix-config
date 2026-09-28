@@ -124,6 +124,7 @@
       # Dev stuff
       "notion-cli"
       "tailscale-app"
+      "moonlight" # remote desktop client for donk (Sunshine)
 
       # AI
       "claude"

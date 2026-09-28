@@ -1,98 +1,60 @@
-# Coding: toolchains and language servers, globally. Projects pin their own
-# versions with their language's tool (uv, pnpm/bun, rustup, go modules)
-{
-  inputs,
-  username,
-  ...
-}: {
-  # These ship several releases a week; stable would be weeks behind. Refresh
-  # with `nix flake update nixpkgs-unstable` (also moves the Mac's cloudflared)
+# Dev tools
+{username, ...}: {
+  # From unstable (stable lags weeks); in place so ChatGPT uses this codex
   nixpkgs.overlays = [
-    (final: prev: let
-      unstable = import inputs.nixpkgs-unstable {
-        inherit (prev.stdenv.hostPlatform) system;
-        config.allowUnfree = true;
-      };
-    in {
-      inherit (unstable) claude-code codex;
+    (final: prev: {
+      inherit (final.unstable) claude-code codex;
     })
   ];
 
-  # Run unpatched binaries (uv's Pythons, prebuilt wheels, downloaded tools)
   programs.nix-ld.enable = true;
 
-  # Containers: rootless Docker only (DOCKER_HOST points at it)
   virtualisation.docker.rootless = {
     enable = true;
     setSocketVariable = true;
   };
 
-  home-manager.users.${username} = {pkgs, ...}: {
-    # Bash for scripts and agents; fish stays the login shell
+  home-manager.users.${username} = {pkgs, ...}: let
+    agentInstructions = ''
+      # This machine (donk)
+
+      - NixOS, not a regular Linux distro: there is no apt/dnf/pacman, and
+        nothing global goes in /usr. Don't try to install system packages.
+      - Missing a tool? Run it without installing: `, <command>` (comma), or
+        `nix shell nixpkgs#<package> -c <command>`.
+      - Project dependencies stay in the project: `uv` for Python (never global
+        `pip install`), pnpm/bun for JS, rustup, go modules. For system
+        libraries or other tools, add a `flake.nix` devShell plus an `.envrc`
+        containing `use flake` (direnv is set up).
+      - Prebuilt binaries (downloaded CLIs, pip wheels) work thanks to nix-ld.
+      - Docker is rootless: `docker` works without sudo.
+      - No sudo: it needs the owner's password. Don't edit /etc.
+      - System config is the flake in ~/nix-config. Don't commit there and
+        don't run `rebuild`; propose changes and let the owner apply them.
+    '';
+  in {
+    home.file.".claude/CLAUDE.md".text = agentInstructions;
+    home.file.".codex/AGENTS.md".text = agentInstructions;
+
     programs.bash = {
       enable = true;
       enableCompletion = true;
     };
 
-    # Python: `uv init`, `uv add`, `uv run`; the bare interpreter is for quick scripts
-    programs.ruff = {
-      enable = true;
-      settings = {};
-    };
-
-    # `go install` puts tools here
-    home.sessionPath = ["$HOME/go/bin"];
-
     home.packages = with pkgs; [
       # Python
-      uv
       python3
-
-      # JS
-      nodejs
-      yarn
-      pnpm
-      bun
-      deno
-      vscode-langservers-extracted # HTML/CSS/JSON LSPs
-
-      # Go
-      go
-      gopls
-
-      # Rust (toolchains per project via rust-toolchain.toml)
-      rustup
 
       # C/C++
       clang-tools
-      lldb
       gcc
       gdb
-      valgrind
       cmake
-      neocmakelsp
       gnumake
-      checkmake
-      codespell
-      cppcheck
-      doxygen
-      gtest
-      lcov
 
       # Zig
       zig
       zls
-
-      # Typst
-      typst
-      tinymist
-      typstyle
-
-      # Nix
-      nixd
-      nil
-      alejandra
-      cloc
 
       # Agents
       claude-code

@@ -1,11 +1,19 @@
-# Home Manager settings shared by air (macOS) and donk (NixOS)
+# Shared by air and donk
 {
+  config,
   lib,
   pkgs,
   ...
 }: let
   inherit (pkgs.stdenv) isDarwin;
+  # unfree, so always built locally; skip the slow tests
+  terraformNoCheck = pkgs.unstable.terraform.overrideAttrs (_: {
+    doCheck = false;
+  });
 in {
+  # Its options.json trips a Nix warning on every rebuild; docs are online
+  manual.manpages.enable = false;
+
   programs.helix = {
     enable = true;
     defaultEditor = true;
@@ -49,6 +57,16 @@ in {
     ];
 
     lfs.enable = true;
+
+    signing = {
+      format = "ssh";
+      key = "${config.home.homeDirectory}/.ssh/${
+        if isDarwin
+        then "github_ed25519"
+        else "id_ed25519"
+      }";
+      signByDefault = true;
+    };
   };
 
   programs.delta = {
@@ -65,14 +83,18 @@ in {
     enableDefaultConfig = false;
 
     settings = {
-      "*" = {
-        IgnoreUnknown = "UseKeychain";
-        UseKeychain = "yes";
-        AddKeysToAgent = "yes";
-        ControlMaster = "auto";
-        ControlPath = "~/.ssh/sockets/%r@%h-%p";
-        ControlPersist = "600";
-      };
+      "*" =
+        {
+          SetEnv.TERM = "xterm-256color";
+          AddKeysToAgent = "yes";
+          ControlMaster = "auto";
+          ControlPath = "~/.ssh/sockets/%r@%h-%p";
+          ControlPersist = "600";
+        }
+        // lib.optionalAttrs isDarwin {
+          IgnoreUnknown = "UseKeychain";
+          UseKeychain = "yes";
+        };
       "github.com" = {
         User = "git";
         IdentityFile = "~/.ssh/github_ed25519";
@@ -81,11 +103,12 @@ in {
     };
   };
 
+  home.file.".ssh/sockets/.keep".text = "";
+
   # Fish
   programs.fish = {
     enable = true;
 
-    # mkAfter: keep these after the fzf/zoxide/atuin init lines, as before
     interactiveShellInit = lib.mkAfter (
       ''
         set fish_greeting ""
@@ -100,12 +123,14 @@ in {
       ls = "eza";
       ll = "eza -l";
       la = "eza -la";
+      tree = "eza --tree";
+      claude = "claude --allow-dangerously-skip-permissions";
       cat = "bat";
       cd = "z";
       rebuild =
         if isDarwin
         then "sudo darwin-rebuild switch --flake ~/nix-config#air"
-        else "sudo nixos-rebuild switch --flake ~/nix-config#donk";
+        else "nixos-rebuild switch --flake ~/nix-config#donk --sudo";
     };
   };
 
@@ -139,19 +164,93 @@ in {
   programs.yazi = {
     enable = true;
     enableFishIntegration = true;
-    shellWrapperName = "yy";
+    shellWrapperName = "y";
   };
 
   programs.nix-index = {
     enable = true;
     enableFishIntegration = true;
   };
-
-  programs.zellij = {
-    enable = true;
-  };
+  programs.nix-index-database.comma.enable = true;
 
   programs.tmux = {
     enable = true;
+    terminal = "tmux-256color";
+    mouse = true;
+    baseIndex = 1;
+    escapeTime = 10;
+    historyLimit = 100000;
+    focusEvents = true;
+    extraConfig = ''
+      set -ag terminal-overrides ",xterm-256color:RGB,xterm-ghostty:RGB,foot:RGB"
+      set -g extended-keys on
+      set -as terminal-features "xterm*:extkeys"
+      set -g set-clipboard on
+      set -g allow-passthrough on
+      set -g renumber-windows on
+      set -ga update-environment " WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP"
+      set -g monitor-bell on
+      set -g bell-action other
+    '';
   };
+
+  home.sessionPath = ["$HOME/go/bin"];
+
+  home.packages = with pkgs; [
+    # Fun
+    krabby
+    fastfetch
+
+    # CLI
+    hyperfine
+    tokei
+    just
+    tealdeer
+    jq
+    fx
+    ripgrep
+    fd
+    eza
+    dust
+    xz
+    p7zip
+    imagemagick
+
+    # Nix
+    alejandra
+    nixd
+    nil
+
+    # Languages
+    uv
+    nodejs
+    pnpm
+    bun
+    go
+    gopls
+    rustup
+    typescript
+    typescript-language-server
+    vscode-langservers-extracted # HTML/CSS/JSON
+
+    # Typst
+    typst
+    tinymist
+    typstyle
+
+    # Cloud / infra
+    awscli2
+    terraformNoCheck
+    packer
+    unstable.cloudflared
+
+    # Security scanning
+    trivy
+    osv-scanner
+    syft
+    grype
+
+    # YubiKey
+    yubikey-manager
+  ];
 }

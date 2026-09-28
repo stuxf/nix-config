@@ -1,4 +1,4 @@
-# Games: Steam (with Proton-GE and gamescope), gamemode, and other launchers
+# Games
 {
   pkgs,
   username,
@@ -7,7 +7,6 @@
   programs.steam = {
     enable = true;
     gamescopeSession.enable = true;
-    # Proton-GE, selectable per game in Steam's compatibility settings
     extraCompatPackages = [pkgs.proton-ge-bin];
   };
   programs.gamemode.enable = true;

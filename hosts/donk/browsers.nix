@@ -1,8 +1,6 @@
-# Browsers and default apps: Chrome (main, with enforced policies), Firefox
-# (backup), zathura for PDFs, and which app opens which kind of file or link
+# Browsers and default apps
 {username, ...}: {
-  # Chrome only reads enforced policies from /etc/opt/chrome, so these live on
-  # the system side. They apply to every Chrome profile
+  # Chrome policies (system side: /etc/opt/chrome)
   programs.chromium = {
     enable = true;
     extensions = [
@@ -11,7 +9,7 @@
       "fcoeoabgfenejglbffodgkkbkcdhcgfn" # Claude
       "hehggadaopoacecdllhhajmbjkdcmajg" # ChatGPT
     ];
-    extraOpts.PasswordManagerEnabled = false; # passwords live in Bitwarden
+    extraOpts.PasswordManagerEnabled = false;
   };
 
   home-manager.users.${username} = {config, ...}: let
@@ -101,7 +99,6 @@
           "x-scheme-handler/tonsite" = "org.telegram.desktop.desktop";
           "x-scheme-handler/notion" = "notion-app-enhanced.desktop";
           "x-scheme-handler/codex" = "chatgpt.desktop";
-          # written by Claude Code itself into ~/.local/share/applications
           "x-scheme-handler/claude-cli" = "claude-code-url-handler.desktop";
         }
         // builtins.listToAttrs (map (t: {

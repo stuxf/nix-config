@@ -1,12 +1,8 @@
-# ASUS Zephyrus G14 GA401QM: Ryzen 9 5900HS (AMD iGPU drives the display),
-# RTX 3060 Laptop for offload. Written out instead of nixos-hardware's
-# asus-zephyrus-ga401 profile so nothing changes underneath us on update.
+# ASUS Zephyrus G14 GA401QM (5900HS + RTX 3060, PRIME offload)
 {...}: {
-  # Default (LTS) kernel: stable's NVIDIA driver doesn't build against the
-  # newest one (7.2), and 6.18 fully supports this laptop
+  # LTS kernel: stable's NVIDIA driver doesn't build on the newest
   boot.kernelParams = ["amd_pstate=active"];
 
-  # Graphics: AMD iGPU with early KMS; "nvidia" in videoDrivers enables the NVIDIA module
   services.xserver.videoDrivers = ["nvidia" "modesetting"];
   hardware.amdgpu.initrd.enable = true;
   hardware.graphics = {
@@ -15,9 +11,9 @@
   };
 
   hardware.nvidia = {
-    open = true; # NVIDIA recommends the open modules for Turing and newer
+    open = true;
     modesetting.enable = true;
-    # Runtime D3: power the dGPU off whenever nothing is using it
+    # power the dGPU off when idle
     powerManagement = {
       enable = true;
       finegrained = true;
@@ -34,8 +30,7 @@
     };
   };
 
-  # ASUS controls (profiles, charge limit, keyboard); asusd manages power
-  # profiles itself, so no TLP / power-profiles-daemon
+  # asusd manages power profiles, so no TLP
   services.asusd.enable = true;
   services.tlp.enable = false;
   services.udev.extraHwdb = ''
@@ -47,8 +42,8 @@
 
   hardware.bluetooth.enable = true;
   services.fstrim.enable = true;
-  services.fwupd.enable = true; # firmware updates (NVMe, etc.)
-  services.smartd.enable = true; # disk health
-  services.pcscd.enable = true; # smartcards: YubiKey PIV, OATH and OpenPGP
-  zramSwap.enable = true; # compressed RAM swap ahead of the disk swap
+  services.fwupd.enable = true;
+  services.smartd.enable = true;
+  services.pcscd.enable = true; # YubiKey
+  zramSwap.enable = true;
 }

@@ -166,8 +166,7 @@ in
         done
         find "$resources" -type f -name '*.musl.node' -delete
 
-        # Local change: the bundled tectonic lives in resources/tectonic/ from
-        # 26.924, in the latex plugin before that
+        # tectonic moved to resources/tectonic/ in 26.924
         for tectonic in "$resources/tectonic/tectonic" "$resources/plugins/openai-bundled/plugins/latex/bin/tectonic"; do
           if [[ -e "$tectonic" ]]; then ln -sf ${lib.getExe tectonic-unwrapped} "$tectonic"; fi
         done
@@ -179,39 +178,6 @@ in
       + lib.optionalString (isLinux && codex != null) ''
         ln -sf ${lib.getExe codex} "$out/lib/chatgpt/resources/codex"
         ln -sf ${lib.getExe' codex "codex-code-mode-host"} "$out/lib/chatgpt/resources/codex-code-mode-host"
-      ''
-      + lib.optionalString isLinux ''
-        # Local change: the Chrome plugin's native messaging host. The app's
-        # own installer never writes it on Linux, so generate what it would:
-        # a config next to the host binary, and the manifest Chrome reads
-        # (link it into ~/.config/google-chrome/NativeMessagingHosts/)
-        chrome="$resources/plugins/openai-bundled/plugins/chrome"
-        host="$chrome/extension-host/linux/${arch}/extension-host"
-        cat > "$(dirname "$host")/extension-host-config.json" <<EOF
-        {
-          "schemaVersion": 1,
-          "channel": "prod",
-          "browserClientPath": "$chrome/scripts/browser-client.mjs",
-          "codexCliPath": "$resources/codex",
-          "nodePath": "${lib.getExe nodejs-slim}",
-          "nodeReplPath": "$resources/cua_node/bin/node_repl",
-          "proxyHost": "127.0.0.1",
-          "proxyPort": 0
-        }
-        EOF
-        mkdir -p "$out/share/chatgpt/native-messaging-hosts"
-        cat > "$out/share/chatgpt/native-messaging-hosts/com.openai.codexextension.json" <<EOF
-        {
-          "allowed_origins": [
-            "chrome-extension://hehggadaopoacecdllhhajmbjkdcmajg/",
-            "chrome-extension://odlomjlbamekndcpllcnffbgeohgkmjh/"
-          ],
-          "description": "ChatGPT browser native messaging host",
-          "name": "com.openai.codexextension",
-          "path": "$host",
-          "type": "stdio"
-        }
-        EOF
       ''
       + ''
         runHook postInstall

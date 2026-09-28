@@ -1,5 +1,4 @@
-# Desktop: sway on the AMD iGPU with greetd, waybar, drop-down menus,
-# notifications, lock/idle, fonts, Catppuccin, terminals
+# sway desktop
 {
   pkgs,
   inputs,
@@ -8,8 +7,8 @@
 }: {
   imports = [inputs.catppuccin.nixosModules.catppuccin];
 
-  # Keep sway on the AMD iGPU (internal panel + HDMI) so the NVIDIA card can
-  # stay powered down. The by-path name has colons, which WLR_DRM_DEVICES can't take
+  # Pin sway to the AMD iGPU so the NVIDIA card can sleep (WLR_DRM_DEVICES
+  # can't take the by-path name's colons)
   services.udev.extraRules = ''
     SUBSYSTEM=="drm", KERNEL=="card*", KERNELS=="0000:04:00.0", SYMLINK+="dri/amd-igpu"
   '';
@@ -17,17 +16,39 @@
   programs.sway = {
     enable = true;
     wrapperFeatures.gtk = true;
-    # sway refuses to start while the NVIDIA module is loaded
+    # needed while the NVIDIA module is loaded
     extraOptions = ["--unsupported-gpu"];
     extraSessionCommands = "export WLR_DRM_DEVICES=/dev/dri/amd-igpu";
   };
+  environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
   services.greetd = {
     enable = true;
-    settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd sway";
+    settings = {
+      # Autologin once per boot so apps come back after a remote reboot
+      initial_session = {
+        user = username;
+        command = "sway";
+      };
+      default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd sway";
+    };
   };
 
-  # Keyring unlocked by the login password (Chrome and apps store secrets there)
+  # Moonlight host; pair at https://donk:47990
+  services.sunshine = {
+    enable = true;
+    autoStart = true;
+    settings = {
+      capture = "wlr";
+      encoder = "vaapi";
+      adapter_name = "/dev/dri/by-path/pci-0000:04:00.0-render";
+      # tailnet counts as wan
+      origin_web_ui_allowed = "wan";
+      csrf_allowed_origins = "https://donk:47990";
+    };
+  };
+
+  # Keyring password is empty (set in seahorse) so autologin unlocks it
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.greetd.enableGnomeKeyring = true;
 
@@ -37,12 +58,11 @@
   };
 
   # Things GNOME used to provide
-  services.gvfs.enable = true; # trash, drives and network shares in Nautilus
+  services.gvfs.enable = true;
   services.udisks2.enable = true;
   services.blueman.enable = true;
   programs.dconf.enable = true;
 
-  # Catppuccin for the console and system-level bits
   catppuccin = {
     enable = true;
     autoEnable = true;
@@ -56,36 +76,42 @@
     config,
     ...
   }: let
-    # Saves to ~/Pictures/Screenshots and copies to the clipboard; extra args go to grim
+    # To ~/Pictures/Screenshots and the clipboard
     shot = pkgs.writeShellScript "screenshot" ''
       dir=~/Pictures/Screenshots
       mkdir -p "$dir"
       ${pkgs.grim}/bin/grim "$@" - | tee "$dir/$(date +%F_%H-%M-%S).png" | ${pkgs.wl-clipboard}/bin/wl-copy
+    '';
+    # Attach to tmux "main" unless a foot window already is
+    tmux = "${config.programs.tmux.package}/bin/tmux";
+    term = pkgs.writeShellScript "term" ''
+      if ${tmux} list-clients -t main -F '#{client_termname}' 2>/dev/null | grep -q '^foot'; then
+        exec foot
+      fi
+      exec foot sh -c '${tmux} new-session -A -s main; exec fish'
     '';
   in {
     imports = [inputs.catppuccin.homeModules.catppuccin];
 
     wayland.windowManager.sway = {
       enable = true;
-      # Use the NixOS sway wrapper (GPU pinning, --unsupported-gpu), not a second copy
+      # use the NixOS wrapper above
       package = null;
       config = {
         modifier = "Mod4";
-        terminal = "foot";
+        terminal = "${term}";
         menu = "fuzzel";
-        bars = []; # waybar instead of swaybar
-        defaultWorkspace = "workspace number 1"; # otherwise the sorted keybindings make it 10
+        bars = [];
+        defaultWorkspace = "workspace number 1";
         fonts = {
           names = ["JetBrainsMonoNL Nerd Font Propo"];
           size = 10.0;
         };
-        # Thin borders, no title bars; Catppuccin colors ($pink etc. come from
-        # the catppuccin sway module)
         window = {
           border = 2;
           titlebar = false;
         };
-        gaps.inner = 10; # always, even with a single window; matches the Mac (yabai window_gap)
+        gaps.inner = 10;
         floating.titlebar = false;
         colors = let
           c = border: {
@@ -101,9 +127,20 @@
           unfocused = c "$surface0";
           urgent = c "$peach";
         };
-        startup = [{command = "${pkgs.autotiling}/bin/autotiling";}]; # dynamic tiling, like pop-shell
+        startup = [
+          # lock first: autologin
+          {command = "${lib.getExe config.programs.swaylock.package} -f";}
+          {command = "${pkgs.autotiling}/bin/autotiling";}
+          {command = "${term}";}
+          {command = "google-chrome-stable --profile-directory='Profile 1'";}
+          {command = "chatgpt";}
+        ];
+        assigns = {
+          "2" = [{class = "^Chatgpt$";} {app_id = "(?i)^chatgpt$";}];
+          "3" = [{app_id = "^google-chrome$";} {class = "^Google-chrome$";}];
+        };
         output = {
-          "eDP-1".mode = "1920x1080@59.990Hz"; # 60 Hz to save power (144 Hz: 143.981Hz)
+          "eDP-1".mode = "1920x1080@59.990Hz"; # 60 Hz saves power
           "*".bg = "${./wallpaper.png} fill";
         };
         input."type:touchpad" = {
@@ -111,13 +148,13 @@
           natural_scroll = "enabled";
         };
         keybindings = lib.mkOptionDefault {
-          "--release Super_L" = "exec fuzzel"; # tap Super to open the launcher, like GNOME
-          "Mod4+q" = "kill"; # close, like GNOME (Super+Shift+Q still works)
-          "Mod1+Tab" = "exec swayr next-window all-workspaces"; # cycle, most recent first
+          "--release Super_L" = "exec fuzzel";
+          "Mod4+q" = "kill";
+          "Mod1+Tab" = "exec swayr next-window all-workspaces";
           "Mod1+Shift+Tab" = "exec swayr prev-window all-workspaces";
-          "Mod4+Tab" = "exec swayr switch-window"; # searchable list of all windows
-          "Print" = "exec ${shot} -g \"$(${pkgs.slurp}/bin/slurp)\""; # area
-          "Shift+Print" = "exec ${shot}"; # full screen
+          "Mod4+Tab" = "exec swayr switch-window";
+          "Print" = "exec ${shot} -g \"$(${pkgs.slurp}/bin/slurp)\"";
+          "Shift+Print" = "exec ${shot}";
           "XF86AudioMicMute" = "exec swayosd-client --input-volume mute-toggle";
           "XF86AudioPlay" = "exec ${pkgs.playerctl}/bin/playerctl play-pause";
           "XF86AudioNext" = "exec ${pkgs.playerctl}/bin/playerctl next";
@@ -135,8 +172,6 @@
       '';
     };
 
-    # Standard companions: waybar (stock default config), swayosd pop-ups for
-    # volume/brightness, fuzzel launcher, mako notifications, tray applets
     programs.waybar = {
       enable = true;
       systemd.enable = true;
@@ -148,17 +183,16 @@
         modules-right = ["tray" "idle_inhibitor" "network" "bluetooth" "backlight" "pulseaudio" "custom/profile" "battery" "custom/notification"];
         clock = {
           format = "{:%a %b %d  %H:%M:%S}";
-          interval = 1; # redraw every second for the seconds
+          interval = 1;
         };
         pulseaudio = {
           format = "{icon} {volume}%";
           format-muted = "󰝟 muted";
           format-icons.default = ["󰕿" "󰖀" "󰕾"];
-          on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; # scroll: volume
-          on-click-right = "pavucontrol"; # devices and per-app volume
+          on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+          on-click-right = "pavucontrol";
         };
         idle_inhibitor = {
-          # Coffee cup: keep the screen on (no lock / screen-off) while active
           format = "{icon}";
           format-icons = {
             activated = "󰅶";
@@ -172,30 +206,29 @@
           format-connected = "󰂱 {num_connections}";
           tooltip-format-connected = "{device_enumerate}";
           tooltip-format-enumerate-connected = "{device_alias}";
-          on-click = "bzmenu --launcher custom --launcher-command 'fuzzel --dmenu --anchor top-right --x-margin 8 --y-margin 4 --width 34 --lines 12'"; # devices, pairing, power
+          on-click = "bzmenu --launcher custom --launcher-command 'fuzzel --dmenu --anchor top-right --x-margin 8 --y-margin 4 --width 34 --lines 12'";
           on-click-right = "blueman-manager";
         };
         network = {
-          format-wifi = "󰖩"; # name shows on hover
+          format-wifi = "󰖩";
           tooltip-format-wifi = "{essid} ({signalStrength}%)";
           format-ethernet = "󰈀";
           format-disconnected = "󰖪";
-          on-click = "networkmanager_dmenu"; # pick a network (menu from the config below)
+          on-click = "networkmanager_dmenu";
         };
         backlight = {
-          format = "󰃟 {percent}%"; # scroll to adjust
+          format = "󰃟 {percent}%";
           on-scroll-up = "swayosd-client --brightness raise";
           on-scroll-down = "swayosd-client --brightness lower";
         };
         "custom/profile" = {
-          # Current ASUS power profile; click cycles Quiet -> Balanced -> Performance
+          # ASUS power profile; click to cycle
           exec = "asusctl profile get | sed -n 's/^Active profile: //p'";
           interval = 5;
           format = "󰾅 {}";
           on-click = "asusctl profile next";
         };
         "custom/notification" = {
-          # Bell: notification count / Do Not Disturb
           exec = "swaync-client -swb";
           return-type = "json";
           format = "{icon}";
@@ -205,8 +238,8 @@
             dnd-none = "󰂛";
             dnd-notification = "󰂛";
           };
-          on-click = "swaync-client -t -sw"; # notification history
-          on-click-right = "swaync-client -d -sw"; # toggle Do Not Disturb
+          on-click = "swaync-client -t -sw";
+          on-click-right = "swaync-client -d -sw"; # Do Not Disturb
           tooltip = false;
         };
         battery = {
@@ -215,7 +248,7 @@
           format-icons = ["󰁺" "󰁼" "󰁾" "󰂀" "󰁹"];
         };
       };
-      # Catppuccin colors (@base, @text, @accent, ...) are imported by the catppuccin module
+      # @base, @accent etc. come from catppuccin
       style = ''
         * { font-family: "JetBrainsMonoNL Nerd Font Propo"; font-size: 13px; min-height: 0; }
         window#waybar { background: alpha(@base, 0.9); color: @text; }
@@ -236,7 +269,6 @@
       enable = true;
       settings.main.font = "JetBrainsMonoNL Nerd Font Propo:size=12";
     };
-    # Notifications (bell in the bar opens a narrow history list)
     services.swaync = {
       enable = true;
       settings = {
@@ -247,16 +279,16 @@
       };
     };
     programs.swayr = {
-      # Alt+Tab window switching
+      # Alt+Tab
       enable = true;
       systemd.enable = true;
       settings.menu = {
         executable = lib.getExe config.programs.fuzzel.package;
         args = ["--dmenu" "--prompt={prompt}"];
       };
-      # Plain text entries; the defaults carry wofi-only "img:...:text:" markup
-      # Presses within 1 s keep walking the list instead of flipping between two
+      # repeated presses keep walking the list
       settings.focus.lockin_delay = 1000;
+      # defaults use wofi-only markup
       settings.format = {
         window_format = "{app_name}  —  {title}  ({workspace_name})";
         workspace_format = "Workspace {name}";
@@ -270,7 +302,7 @@
       compact = True
       wifi_chars = ▂▄▆█
     '';
-    services.polkit-gnome.enable = true; # password prompts for admin actions
+    services.polkit-gnome.enable = true;
 
     programs.swaylock.enable = true;
     services.swayidle = {
@@ -288,7 +320,6 @@
       ];
     };
 
-    # Nautilus: files, imv: images, pavucontrol: audio devices and levels
     home.packages = with pkgs; [
       nautilus
       imv
@@ -298,14 +329,13 @@
       bzmenu
       # fonts
       inter
-      liberation_ttf # metric-compatible Arial/Times/Courier for documents and sites
+      liberation_ttf
       nerd-fonts.jetbrains-mono
       noto-fonts-color-emoji
     ];
 
-    # Catppuccin cursor; Adwaita's icons stay installed for GTK apps' symbolic icons
     catppuccin.cursors.enable = true;
-    catppuccin.cursors.accent = "dark"; # neutral instead of the pink accent
+    catppuccin.cursors.accent = "dark";
     home.pointerCursor = {
       enable = true;
       size = 24;
@@ -313,10 +343,8 @@
       sway.enable = true;
     };
 
-    # Fonts (packages above): Inter for UI, JetBrains Mono for code, Liberation for compatibility
     fonts.fontconfig = {
       enable = true;
-      # Smooth, lightly hinted, subpixel (RGB) text, as GNOME had it
       antialiasing = true;
       hinting = "slight";
       subpixelRendering = "rgb";
@@ -327,7 +355,6 @@
         emoji = ["Noto Color Emoji"];
       };
     };
-    # GTK/libadwaita apps take their UI font from here
     dconf.settings."org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
       font-name = "Inter 11";
@@ -343,7 +370,6 @@
       accent = "pink";
     };
 
-    # Terminals: foot is the default (Super+Enter), Ghostty stays installed
     programs.foot = {
       enable = true;
       settings.main.font = "JetBrainsMonoNL Nerd Font:size=11";

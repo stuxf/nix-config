@@ -1,20 +1,16 @@
-# Settings for running donk as an always-on remote devbox
+# Always-on remote devbox
 {
   pkgs,
   username,
   ...
 }: {
-  # Reach the box over the tailnet only; `tailscale up` once to log in.
-  # --ssh enables Tailscale SSH (auth via tailnet identity, no keys to manage)
   services.tailscale = {
     enable = true;
     extraSetFlags = ["--ssh"];
   };
-  # Services listening on the tailnet (e.g. Steam Remote Play) are reachable
-  # from your own devices but stay blocked on other networks
   networking.firewall.trustedInterfaces = ["tailscale0"];
 
-  # Never sleep: ignore the lid and disable the sleep targets entirely
+  # Never sleep
   services.logind.settings.Login = {
     HandleLidSwitch = "ignore";
     HandleLidSwitchExternalPower = "ignore";
@@ -27,24 +23,146 @@
     hybrid-sleep.enable = false;
   };
 
-  # Stay reachable: keep Wi-Fi out of power-save and never give up reconnecting
   networking.networkmanager.wifi.powersave = false;
   networking.networkmanager.settings.main.autoconnect-retries-default = 0;
 
-  # Reboot automatically if the kernel hangs (AMD SP5100 TCO watchdog)
+  # Reboot if the kernel hangs
   systemd.settings.Manager = {
     RuntimeWatchdogSec = "30s";
     RebootWatchdogSec = "10min";
   };
 
-  # Start user services (e.g. long-running agent sessions) at boot
-  # and keep them running without an active login
+  systemd.oomd.enableUserSlices = true;
+
+  # Keep agent builds from starving the box
+  nix.settings = {
+    max-jobs = 4;
+    cores = 4;
+    min-free = 20 * 1024 * 1024 * 1024;
+    max-free = 60 * 1024 * 1024 * 1024;
+  };
+  nix.daemonCPUSchedPolicy = "batch";
+  nix.daemonIOSchedClass = "idle";
+  systemd.services.nix-daemon.serviceConfig = {
+    MemoryHigh = "9G";
+    MemoryMax = "11G";
+  };
+
+  home-manager.users.${username} = {
+    config,
+    pkgs,
+    ...
+  }: let
+    tmux = "${config.programs.tmux.package}/bin/tmux";
+
+    # After each resurrect save: record the Claude / Codex session in each pane
+    agentsSave = pkgs.writeShellScript "tmux-agents-save" ''
+      set -u
+      dir=$(${tmux} show -gqv @agents-state-dir); dir=''${dir:-$HOME/.local/state/tmux-agents}
+      mkdir -p "$dir"
+      declare -A pos
+      while read -r pid p; do pos[$pid]=$p; done \
+        < <(${tmux} list-panes -a -F '#{pane_pid} #{session_name}:#{window_index}.#{pane_index}')
+      pane_of() {
+        local p=$1
+        while [ -n "$p" ] && [ "$p" -gt 1 ]; do
+          [ -n "''${pos[$p]:-}" ] && { echo "''${pos[$p]}"; return; }
+          p=$(sed 's/.*) //' "/proc/$p/stat" 2>/dev/null | cut -d' ' -f2)
+        done
+      }
+      keep() {
+        local tool=$1; shift; local out=()
+        while [ $# -gt 0 ]; do
+          case "$tool:$1" in
+            claude:--dangerously-skip-permissions | claude:--allow-dangerously-skip-permissions | \
+            claude:--chrome | claude:--no-chrome | codex:--yolo | codex:--search | \
+            codex:--dangerously-bypass-approvals-and-sandbox) out+=("$1") ;;
+            claude:--permission-mode | claude:--model | codex:-m | codex:--model | codex:-s | \
+            codex:--sandbox | codex:-a | codex:--ask-for-approval) out+=("$1" "''${2:-}"); shift ;;
+          esac
+          shift
+        done
+        echo "''${out[*]:-}"
+      }
+      tmp=$(mktemp "$dir/.panes.XXXXXX")
+      for d in /proc/[0-9]*; do
+        pid=''${d#/proc/}
+        mapfile -d "" -t argv < "$d/cmdline" 2>/dev/null || continue
+        [ ''${#argv[@]} -gt 0 ] || continue
+        name=''${argv[0]##*/}; sid=""; tool=""
+        case "$name" in
+          claude | .claude-wrapped)
+            tool=claude
+            sid=$(${pkgs.jq}/bin/jq -r '.sessionId // empty' "$HOME/.claude/sessions/$pid.json" 2>/dev/null) ;;
+          codex | .codex-wrapped)
+            case "''${argv[1]:-}" in "" | -* | resume) ;; *) continue ;; esac
+            tool=codex
+            sid=$(for f in "$d"/fd/*; do readlink "$f"; done 2>/dev/null |
+              grep -o 'rollout-.*-[0-9a-f-]\{36\}\.jsonl$' | tail -1 |
+              grep -o '[0-9a-f-]\{36\}\.jsonl$' | sed 's/\.jsonl$//') ;;
+          *) continue ;;
+        esac
+        p=$(pane_of "$pid"); [ -n "$p" ] || continue
+        printf '%s\t%s\t%s\t%s\n' "$p" "$tool" "$sid" "$(keep "$tool" "''${argv[@]:1}")" >> "$tmp"
+      done
+      mv "$tmp" "$dir/panes.tsv"
+    '';
+
+    # Runs in restored panes: resume that pane's session
+    agentsRestore = pkgs.writeShellScript "tmux-agents-restore" ''
+      tool=$1
+      dir=$(${tmux} show -gqv @agents-state-dir); dir=''${dir:-$HOME/.local/state/tmux-agents}
+      me=$(${tmux} display -p -t "$TMUX_PANE" '#{session_name}:#{window_index}.#{pane_index}')
+      IFS=$'\t' read -r _ _ sid flags < <(${pkgs.gawk}/bin/awk -F'\t' -v p="$me" -v t="$tool" \
+        '$1 == p && $2 == t' "$dir/panes.tsv" 2>/dev/null | tail -1)
+      case "$tool" in
+        claude)
+          if [ -n "''${sid:-}" ]; then exec claude $flags --resume "$sid"; fi
+          exec claude --allow-dangerously-skip-permissions --continue ;;
+        codex)
+          if [ -n "''${sid:-}" ]; then exec codex resume $flags "$sid"; fi
+          exec codex resume --last ;;
+      esac
+    '';
+  in {
+    programs.tmux.plugins = with pkgs.tmuxPlugins; [
+      {
+        plugin = resurrect;
+        extraConfig = ''
+          set -g @resurrect-capture-pane-contents 'on'
+          set -g @resurrect-processes '"~claude->${agentsRestore} claude" "~codex->${agentsRestore} codex"'
+          set -g @resurrect-hook-post-save-all '${agentsSave}'
+        '';
+      }
+      {
+        plugin = continuum;
+        extraConfig = ''
+          set -g @continuum-restore 'on'
+          set -g @continuum-save-interval '15'
+        '';
+      }
+    ];
+
+    systemd.user.services.tmux-main = {
+      Unit = {
+        Description = "tmux session main";
+        # restarting would kill everything inside
+        X-SwitchMethod = "keep-old";
+      };
+      Service = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        WorkingDirectory = "%h";
+        ExecStart = "${pkgs.bash}/bin/bash -lc '${config.programs.tmux.package}/bin/tmux new-session -A -d -s main'";
+        ExecStop = "${config.programs.tmux.package}/bin/tmux kill-session -t main";
+      };
+      Install.WantedBy = ["default.target"];
+    };
+  };
+
   users.users.${username}.linger = true;
 
-  # ASUS power settings, applied at boot and whenever the schedule flips:
-  # - cap the charge at 80% (always plugged in)
-  # - Quiet on battery; on AC, Balanced 09:00-21:00 and Quiet (fans off) overnight,
-  #   since it sits next to the bed
+  # 60% charge cap; Quiet on battery and overnight, Balanced 09-21 on AC
   systemd.services.asus-power-profile = {
     description = "Apply ASUS charge limit and time-of-day power profile";
     after = ["asusd.service"];
@@ -52,7 +170,7 @@
     wantedBy = ["multi-user.target"];
     path = [pkgs.asusctl pkgs.coreutils];
     script = ''
-      asusctl battery limit 80
+      asusctl battery limit 60
       asusctl profile set --battery Quiet
       hour=$(date +%-H)
       if [ "$hour" -ge 21 ] || [ "$hour" -lt 9 ]; then
@@ -63,7 +181,6 @@
     '';
     serviceConfig = {
       Type = "oneshot";
-      # asusd may not be answering on D-Bus yet at boot
       Restart = "on-failure";
       RestartSec = 5;
     };

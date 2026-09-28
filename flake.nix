@@ -1,5 +1,5 @@
 {
-  description = "MacOS Nix Configuration";
+  description = "Nix configuration for air (macOS) and donk (NixOS)";
 
   inputs = {
     # Stable Nixpkgs via FlakeHub
@@ -26,6 +26,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Prebuilt nix-index database
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Catppuccin theming (donk)
     catppuccin = {
       url = "github:catppuccin/nix";
@@ -40,25 +46,33 @@
     nix-darwin,
     determinate,
     home-manager,
+    nix-index-database,
     ...
   }: let
     username = "user";
-    system = "aarch64-darwin";
 
-    # Unstable packages (for cherry-picking)
-    pkgs-unstable = import nixpkgs-unstable {
-      inherit system;
-      config.allowUnfree = true;
+    # pkgs.unstable.<name>
+    unstableOverlay = {
+      nixpkgs.overlays = [
+        (final: prev: {
+          unstable = import nixpkgs-unstable {
+            inherit (final.stdenv.hostPlatform) system;
+            config.allowUnfree = true;
+          };
+        })
+      ];
     };
   in {
     darwinConfigurations.air = nix-darwin.lib.darwinSystem {
-      inherit system;
+      system = "aarch64-darwin";
       modules = [
+        unstableOverlay
+
         # Determinate module
         determinate.darwinModules.default
 
         # Darwin Config
-        ./darwin
+        ./hosts/air
 
         # home-manager module
         home-manager.darwinModules.home-manager
@@ -66,8 +80,9 @@
           home-manager = {
             useGlobalPkgs = true;
             useUserPackages = true;
-            users.${username} = import ./home;
-            extraSpecialArgs = {inherit pkgs-unstable;};
+            backupFileExtension = "backup";
+            users.${username} = import ./hosts/air/home.nix;
+            sharedModules = [nix-index-database.homeModules.nix-index];
           };
         }
 
@@ -79,6 +94,7 @@
     nixosConfigurations.donk = nixpkgs.lib.nixosSystem {
       specialArgs = {inherit inputs username;};
       modules = [
+        unstableOverlay
         determinate.nixosModules.default
         ./hosts/donk
 
@@ -89,6 +105,7 @@
             useUserPackages = true;
             backupFileExtension = "backup";
             users.${username} = import ./hosts/donk/home.nix;
+            sharedModules = [nix-index-database.homeModules.nix-index];
             extraSpecialArgs = {inherit username;};
           };
         }
@@ -97,7 +114,7 @@
 
     # Nix formatter
     # Format all Nix files: nix fmt
-    formatter.${system} = nixpkgs.legacyPackages.${system}.alejandra;
+    formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.alejandra;
     formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
   };
 }

@@ -44,6 +44,23 @@
 
   services.printing.enable = true;
   services.cloudflare-warp.enable = true;
+  # Resolve tailnet names outside WARP
+  systemd.services.warp-tailnet-dns = {
+    description = "Resolve tailnet names outside WARP";
+    after = ["cloudflare-warp.service"];
+    wants = ["cloudflare-warp.service"];
+    wantedBy = ["multi-user.target"];
+    path = [pkgs.cloudflare-warp pkgs.gnugrep];
+    script = ''
+      warp-cli --accept-tos dns fallback list | grep -qw 'ts\.net' ||
+        warp-cli --accept-tos dns fallback add ts.net
+    '';
+    serviceConfig = {
+      Type = "oneshot";
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
+  };
 
   users.users.${username} = {
     isNormalUser = true;
@@ -54,10 +71,9 @@
 
   nixpkgs.config.allowUnfree = true;
 
-  # System-wide tools (also available to root)
   environment.systemPackages = with pkgs; [vim git helix wget];
 
-  # Pin `nixpkgs` (registry and NIX_PATH) to this flake's input; no channels
+  # Determinate otherwise points nixpkgs at nixpkgs-weekly
   nix.registry.nixpkgs.flake = inputs.nixpkgs;
   nix.channel.enable = false;
   nix.gc = {
