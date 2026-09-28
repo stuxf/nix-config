@@ -122,7 +122,6 @@
       "orbstack"
 
       # Dev stuff
-      "android-studio"
       "notion-cli"
       "tailscale-app"
 

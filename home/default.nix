@@ -27,6 +27,7 @@ in {
       hyperfine
       tokei
       tealdeer
+      awscli2
       terraformNoCheck
       packer
 
