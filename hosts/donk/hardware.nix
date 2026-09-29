@@ -40,6 +40,13 @@
      KEYBOARD_KEY_ff3100b3=end    # Fn+Right as End
   '';
 
+  # Intel AX200: drops packets under load in the default balanced power
+  # scheme, and stalls on Wi-Fi 6 with this (Google) router
+  boot.extraModprobeConfig = ''
+    options iwlmvm power_scheme=1
+    options iwlwifi disable_11ax=1
+  '';
+
   hardware.bluetooth.enable = true;
   services.fstrim.enable = true;
   services.fwupd.enable = true;

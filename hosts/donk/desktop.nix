@@ -143,12 +143,15 @@
           "eDP-1".mode = "1920x1080@59.990Hz"; # 60 Hz saves power
           "*".bg = "${./wallpaper.png} fill";
         };
+        # Moonlight on macOS doesn't send ⌘: right Option is Super when streaming
+        input."48879:57005:Keyboard_passthrough".xkb_options = "altwin:swap_ralt_rwin";
         input."type:touchpad" = {
           tap = "enabled";
           natural_scroll = "enabled";
         };
         keybindings = lib.mkOptionDefault {
           "--release Super_L" = "exec fuzzel";
+          "--release Super_R" = "exec fuzzel";
           "Mod4+q" = "kill";
           "Mod1+Tab" = "exec swayr next-window all-workspaces";
           "Mod1+Shift+Tab" = "exec swayr prev-window all-workspaces";
