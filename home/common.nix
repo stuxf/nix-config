@@ -54,6 +54,10 @@ in {
       "*.swp"
       "*~"
       ".direnv/"
+      ".claude/worktrees/"
+      ".claude/settings.local.json"
+      "CLAUDE.local.md"
+      "AGENTS.override.md"
     ];
 
     lfs.enable = true;
