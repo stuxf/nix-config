@@ -1,5 +1,9 @@
 # Dev tools
-{username, ...}: {
+{
+  pkgs,
+  username,
+  ...
+}: {
   # From unstable (stable lags weeks); in place so ChatGPT uses this codex
   nixpkgs.overlays = [
     (final: prev: {
@@ -11,10 +15,19 @@
   # /bin and /usr/bin show everything on PATH, for scripts hard-coding /bin/bash etc.
   services.envfs.enable = true;
 
-  virtualisation.docker.rootless = {
+  # Rootless Podman; `docker` runs podman, and Docker SDKs/compose use its API socket
+  virtualisation.podman = {
     enable = true;
-    setSocketVariable = true;
+    dockerCompat = true;
+    defaultNetwork.settings.dns_enabled = true;
   };
+  systemd.user.sockets.podman.wantedBy = ["sockets.target"];
+  environment.extraInit = ''
+    if [ -z "$DOCKER_HOST" ] && [ -n "$XDG_RUNTIME_DIR" ]; then
+      export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
+    fi
+  '';
+  environment.systemPackages = [pkgs.docker-compose];
 
   home-manager.users.${username} = {pkgs, ...}: let
     agentInstructions = ''
@@ -29,7 +42,8 @@
         libraries or other tools, add a `flake.nix` devShell plus an `.envrc`
         containing `use flake` (direnv is set up).
       - Prebuilt binaries (downloaded CLIs, pip wheels) work thanks to nix-ld.
-      - Docker is rootless: `docker` works without sudo.
+      - Containers: rootless Podman. `docker` is an alias for it and works
+        without sudo; Docker SDKs and compose reach it via DOCKER_HOST.
       - No sudo: it needs the owner's password. Don't edit /etc.
       - System config is the flake in ~/nix-config. Don't commit there and
         don't run `rebuild`; propose changes and let the owner apply them.
