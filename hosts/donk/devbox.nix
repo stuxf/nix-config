@@ -143,6 +143,24 @@
       }
     ];
 
+    # Claude Remote Control for ~/Veria: start sessions on donk from the app
+    systemd.user.services.claude-rc = {
+      Unit = {
+        Description = "Claude Remote Control (~/Veria)";
+        After = ["network-online.target"];
+        # restarting would end its running sessions
+        X-SwitchMethod = "keep-old";
+      };
+      Service = {
+        WorkingDirectory = "%h/Veria";
+        # login shell for the full user environment
+        ExecStart = "${pkgs.bash}/bin/bash -lc 'exec claude --allow-dangerously-skip-permissions remote-control'";
+        Restart = "always";
+        RestartSec = 10;
+      };
+      Install.WantedBy = ["default.target"];
+    };
+
     systemd.user.services.tmux-main = {
       Unit = {
         Description = "tmux session main";

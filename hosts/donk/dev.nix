@@ -8,6 +8,8 @@
   ];
 
   programs.nix-ld.enable = true;
+  # /bin and /usr/bin show everything on PATH, for scripts hard-coding /bin/bash etc.
+  services.envfs.enable = true;
 
   virtualisation.docker.rootless = {
     enable = true;
