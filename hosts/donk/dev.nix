@@ -23,7 +23,7 @@
   };
   systemd.user.sockets.podman.wantedBy = ["sockets.target"];
   environment.extraInit = ''
-    if [ -z "$DOCKER_HOST" ] && [ -n "$XDG_RUNTIME_DIR" ]; then
+    if [ -n "$XDG_RUNTIME_DIR" ]; then
       export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
     fi
   '';
@@ -55,6 +55,32 @@
     programs.bash = {
       enable = true;
       enableCompletion = true;
+    };
+
+    # Podman puts every rootless container in this slice: one cap for all of them
+    systemd.user.slices.user.Slice = {
+      MemoryHigh = "6G";
+      MemoryMax = "8G";
+    };
+
+    # Prune what killed or crashed runs leave behind
+    systemd.user.services.podman-prune = {
+      Unit.Description = "Prune stale Podman containers, images and volumes";
+      Service = {
+        Type = "oneshot";
+        ExecStart = [
+          "/run/current-system/sw/bin/podman container prune -f --filter until=24h"
+          "/run/current-system/sw/bin/podman image prune -f"
+          "/run/current-system/sw/bin/podman volume prune -f --filter until=336h"
+        ];
+      };
+    };
+    systemd.user.timers.podman-prune = {
+      Timer = {
+        OnCalendar = "daily";
+        Persistent = true;
+      };
+      Install.WantedBy = ["timers.target"];
     };
 
     home.packages = with pkgs; [

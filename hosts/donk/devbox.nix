@@ -33,6 +33,11 @@
   };
 
   systemd.oomd.enableUserSlices = true;
+  # Per-cgroup memory/CPU history: `below replay -t "2h ago"`
+  services.below = {
+    enable = true;
+    retention.time = 14 * 24 * 3600;
+  };
 
   # Keep agent builds from starving the box
   nix.settings = {
@@ -157,6 +162,9 @@
         ExecStart = "${pkgs.bash}/bin/bash -lc 'exec claude --allow-dangerously-skip-permissions remote-control'";
         Restart = "always";
         RestartSec = 10;
+        # stdout is its TUI redrawing every second; errors still reach the journal
+        StandardOutput = "null";
+        StandardError = "journal";
       };
       Install.WantedBy = ["default.target"];
     };
