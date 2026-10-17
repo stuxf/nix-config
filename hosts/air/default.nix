@@ -103,6 +103,7 @@
       # Communication
       "vesktop"
       "signal"
+      "whatsapp"
       "telegram"
       "slack"
 

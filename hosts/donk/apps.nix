@@ -60,6 +60,7 @@
       spotify
       telegram-desktop
       signal-desktop
+      zapzap # WhatsApp
       notion-app-enhanced
       chatgpt
 

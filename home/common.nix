@@ -6,6 +6,13 @@
   ...
 }: let
   inherit (pkgs.stdenv) isDarwin;
+  # sudo password up front, kept fresh while it builds, dropped after
+  rebuildDonk = pkgs.writeShellScript "rebuild" ''
+    sudo -v || exit
+    while sleep 60; do sudo -n -v || exit; done &
+    trap 'kill $!; sudo -k' EXIT
+    nixos-rebuild switch --flake ~/nix-config#donk --sudo "$@"
+  '';
   # unfree, so always built locally; skip the slow tests
   terraformNoCheck = pkgs.unstable.terraform.overrideAttrs (_: {
     doCheck = false;
@@ -134,7 +141,7 @@ in {
       rebuild =
         if isDarwin
         then "sudo darwin-rebuild switch --flake ~/nix-config#air"
-        else "nixos-rebuild switch --flake ~/nix-config#donk --sudo";
+        else "${rebuildDonk}";
     };
   };
 

@@ -37,6 +37,12 @@
       url = "github:catppuccin/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Cua Driver: computer use for agents (donk)
+    cua = {
+      url = "github:trycua/cua/cua-driver-rs-v0.36.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {

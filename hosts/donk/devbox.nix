@@ -36,7 +36,9 @@
   # Per-cgroup memory/CPU history: `below replay -t "2h ago"`
   services.below = {
     enable = true;
-    retention.time = 14 * 24 * 3600;
+    compression.enable = true;
+    # Uncompressed it wrote ~30G/day here
+    retention.size = 10 * 1024 * 1024 * 1024;
   };
 
   # Keep agent builds from starving the box

@@ -1,5 +1,6 @@
 # Dev tools
 {
+  inputs,
   pkgs,
   username,
   ...
@@ -48,6 +49,23 @@
       - System config is the flake in ~/nix-config. Don't commit there and
         don't run `rebuild`; propose changes and let the owner apply them.
     '';
+
+    # Computer use MCP server (`cua-driver mcp`); telemetry and update check off
+    cuaDriver = pkgs.writeShellApplication {
+      name = "cua-driver";
+      # wtype: keyboard input on Sway
+      runtimeInputs = [pkgs.wtype];
+      text = ''
+        export DO_NOT_TRACK=1 CUA_DRIVER_RS_UPDATE_CHECK=false CUA_DRIVER_RS_ENABLE_WAYLAND=1
+        # current sway session, even from a shell that predates it
+        while IFS= read -r kv; do export "''${kv?}"; done < <(
+          systemctl --user show-environment | grep -E '^(WAYLAND_DISPLAY|DISPLAY|SWAYSOCK)='
+        )
+        # NixOS sets these to turn app accessibility off; apps the driver launches need it on
+        unset NO_AT_BRIDGE GTK_A11Y
+        exec ${inputs.cua.packages.${pkgs.stdenv.hostPlatform.system}.cua-driver}/bin/cua-driver "$@"
+      '';
+    };
   in {
     home.file.".claude/CLAUDE.md".text = agentInstructions;
     home.file.".codex/AGENTS.md".text = agentInstructions;
@@ -101,6 +119,7 @@
       # Agents
       claude-code
       codex
+      cuaDriver
     ];
   };
 }
