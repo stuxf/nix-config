@@ -33,6 +33,8 @@
   };
 
   systemd.oomd.enableUserSlices = true;
+  # Kill the biggest swap user at 90% swap, before the box freezes
+  systemd.slices."-".sliceConfig.ManagedOOMSwap = "kill";
   # Per-cgroup memory/CPU history: `below replay -t "2h ago"`
   services.below = {
     enable = true;
@@ -51,8 +53,8 @@
   nix.daemonCPUSchedPolicy = "batch";
   nix.daemonIOSchedClass = "idle";
   systemd.services.nix-daemon.serviceConfig = {
-    MemoryHigh = "9G";
-    MemoryMax = "11G";
+    MemoryHigh = "16G";
+    MemoryMax = "20G";
   };
 
   home-manager.users.${username} = {
@@ -124,7 +126,15 @@
         '$1 == p && $2 == t' "$dir/panes.tsv" 2>/dev/null | tail -1)
       case "$tool" in
         claude)
-          if [ -n "''${sid:-}" ]; then exec claude $flags --resume "$sid"; fi
+          if [ -n "''${sid:-}" ]; then
+            # Still bound to its worktree: resume from the main checkout so Claude Code re-enters it
+            main=''${PWD%%/.claude/worktrees/*}
+            for t in "$HOME"/.claude/projects/*/"$sid".jsonl; do
+              [ "$main" != "$PWD" ] && grep '"type":"worktree-state"' "$t" 2>/dev/null | tail -1 |
+                grep -qF "\"originalCwd\":\"$main\"" && cd "$main" || true
+            done
+            exec claude $flags --resume "$sid"
+          fi
           exec claude --allow-dangerously-skip-permissions --continue ;;
         codex)
           if [ -n "''${sid:-}" ]; then exec codex resume $flags "$sid"; fi
@@ -181,8 +191,9 @@
         Type = "oneshot";
         RemainAfterExit = true;
         WorkingDirectory = "%h";
-        ExecStart = "${pkgs.bash}/bin/bash -lc '${config.programs.tmux.package}/bin/tmux new-session -A -d -s main'";
-        ExecStop = "${config.programs.tmux.package}/bin/tmux kill-session -t main";
+        # sway's terminal may have created it first
+        ExecStart = "${pkgs.bash}/bin/bash -lc '${tmux} has-session -t main 2>/dev/null || ${tmux} new-session -d -s main'";
+        ExecStop = "${tmux} kill-session -t main";
       };
       Install.WantedBy = ["default.target"];
     };

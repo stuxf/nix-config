@@ -1,9 +1,8 @@
 # Apps
 {username, ...}: {
   nixpkgs.overlays = [
-    # until nixpkgs#551713 lands
-    (final: prev: {
-      # bundled codex; nixpkgs' lags behind (gpt-6.1-sol needs >= 0.159.2)
+    # Own package: nixpkgs' lags releases. Keeps the codex the app ships with
+    (final: _: {
       chatgpt = final.callPackage ../../pkgs/chatgpt/package.nix {codex = null;};
     })
   ];

@@ -5,9 +5,9 @@
   username,
   ...
 }: {
-  # From unstable (stable lags weeks); in place so ChatGPT uses this codex
+  # From unstable (stable lags weeks)
   nixpkgs.overlays = [
-    (final: prev: {
+    (final: _: {
       inherit (final.unstable) claude-code codex;
     })
   ];
@@ -70,10 +70,7 @@
     home.file.".claude/CLAUDE.md".text = agentInstructions;
     home.file.".codex/AGENTS.md".text = agentInstructions;
 
-    programs.bash = {
-      enable = true;
-      enableCompletion = true;
-    };
+    programs.bash.enable = true;
 
     # Podman puts every rootless container in this slice: one cap for all of them
     systemd.user.slices.user.Slice = {

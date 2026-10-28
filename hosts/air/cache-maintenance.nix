@@ -12,7 +12,7 @@
       bun
       nodejs
       pnpm
-      uv
+      unstable.uv
     ];
     text = ''
       uv cache prune || true

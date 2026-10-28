@@ -1,6 +1,5 @@
 # ASUS Zephyrus G14 GA401QM (5900HS + RTX 3060, PRIME offload)
 {...}: {
-  # LTS kernel: stable's NVIDIA driver doesn't build on the newest
   boot.kernelParams = ["amd_pstate=active"];
 
   services.xserver.videoDrivers = ["nvidia" "modesetting"];

@@ -6,12 +6,29 @@
   ...
 }: let
   inherit (pkgs.stdenv) isDarwin;
-  # sudo password up front, kept fresh while it builds, dropped after
-  rebuildDonk = pkgs.writeShellScript "rebuild" ''
+  # GitHub auth and commit signing
+  githubKey = "${config.home.homeDirectory}/.ssh/${
+    if isDarwin
+    then "github_ed25519"
+    else "id_ed25519"
+  }";
+  # sudo password up front, kept fresh while it builds, dropped after;
+  # `rebuild --update` first updates flake inputs (and ChatGPT on donk)
+  rebuild = pkgs.writeShellScript "rebuild" ''
     sudo -v || exit
     while sleep 60; do sudo -n -v || exit; done &
     trap 'kill $!; sudo -k' EXIT
-    nixos-rebuild switch --flake ~/nix-config#donk --sudo "$@"
+    cd ~/nix-config || exit
+    ${lib.optionalString isDarwin "ulimit -n 10240"}
+    if [ "''${1-}" = --update ]; then
+      shift
+      ${lib.optionalString (!isDarwin) "./pkgs/chatgpt/update.sh &&"} nix flake update && alejandra . || exit
+    fi
+    ${
+      if isDarwin
+      then "sudo darwin-rebuild switch --flake .#air"
+      else "nixos-rebuild switch --flake .#donk --sudo"
+    } "$@"
   '';
   # unfree, so always built locally; skip the slow tests
   terraformNoCheck = pkgs.unstable.terraform.overrideAttrs (_: {
@@ -71,11 +88,7 @@ in {
 
     signing = {
       format = "ssh";
-      key = "${config.home.homeDirectory}/.ssh/${
-        if isDarwin
-        then "github_ed25519"
-        else "id_ed25519"
-      }";
+      key = githubKey;
       signByDefault = true;
     };
   };
@@ -108,7 +121,7 @@ in {
         };
       "github.com" = {
         User = "git";
-        IdentityFile = "~/.ssh/github_ed25519";
+        IdentityFile = githubKey;
         IdentitiesOnly = true;
       };
     };
@@ -138,27 +151,18 @@ in {
       claude = "claude --allow-dangerously-skip-permissions";
       cat = "bat";
       cd = "z";
-      rebuild =
-        if isDarwin
-        then "sudo darwin-rebuild switch --flake ~/nix-config#air"
-        else "${rebuildDonk}";
+      rebuild = "${rebuild}";
     };
   };
 
-  programs.zoxide = {
-    enable = true;
-    enableFishIntegration = true;
-  };
+  programs.zoxide.enable = true;
 
   programs.starship = {
     enable = true;
     settings.add_newline = false;
   };
 
-  programs.atuin = {
-    enable = true;
-    enableFishIntegration = true;
-  };
+  programs.atuin.enable = true;
 
   programs.direnv = {
     enable = true;
@@ -166,22 +170,15 @@ in {
   };
 
   programs.bat.enable = true;
-  programs.fzf = {
-    enable = true;
-    enableFishIntegration = true;
-  };
+  programs.fzf.enable = true;
 
   programs.btop.enable = true;
   programs.yazi = {
     enable = true;
-    enableFishIntegration = true;
     shellWrapperName = "y";
   };
 
-  programs.nix-index = {
-    enable = true;
-    enableFishIntegration = true;
-  };
+  programs.nix-index.enable = true;
   programs.nix-index-database.comma.enable = true;
 
   programs.tmux = {
@@ -233,7 +230,7 @@ in {
     nil
 
     # Languages
-    uv
+    unstable.uv
     nodejs
     pnpm
     bun

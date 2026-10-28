@@ -44,6 +44,8 @@
 
   services.printing.enable = true;
   services.cloudflare-warp.enable = true;
+  # From unstable (stable lags); back to stable once 26.05 has 2026.8.2115.0
+  nixpkgs.overlays = [(final: _: {inherit (final.unstable) cloudflare-warp;})];
   # Resolve tailnet names outside WARP
   systemd.services.warp-tailnet-dns = {
     description = "Resolve tailnet names outside WARP";
@@ -52,6 +54,11 @@
     wantedBy = ["multi-user.target"];
     path = [pkgs.cloudflare-warp pkgs.gnugrep];
     script = ''
+      # the daemon takes a moment after (re)starting
+      for _ in $(seq 30); do
+        warp-cli --accept-tos dns fallback list >/dev/null 2>&1 && break
+        sleep 1
+      done
       warp-cli --accept-tos dns fallback list | grep -qw 'ts\.net' ||
         warp-cli --accept-tos dns fallback add ts.net
     '';

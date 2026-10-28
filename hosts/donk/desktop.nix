@@ -4,7 +4,14 @@
   inputs,
   username,
   ...
-}: {
+}: let
+  theme = {
+    enable = true;
+    autoEnable = true;
+    flavor = "mocha";
+    accent = "pink";
+  };
+in {
   imports = [inputs.catppuccin.nixosModules.catppuccin];
 
   # Pin sway to the AMD iGPU so the NVIDIA card can sleep (WLR_DRM_DEVICES
@@ -63,12 +70,7 @@
   services.blueman.enable = true;
   programs.dconf.enable = true;
 
-  catppuccin = {
-    enable = true;
-    autoEnable = true;
-    flavor = "mocha";
-    accent = "pink";
-  };
+  catppuccin = theme;
 
   home-manager.users.${username} = {
     lib,
@@ -337,8 +339,6 @@
       noto-fonts-color-emoji
     ];
 
-    catppuccin.cursors.enable = true;
-    catppuccin.cursors.accent = "dark";
     home.pointerCursor = {
       enable = true;
       size = 24;
@@ -366,12 +366,14 @@
     };
 
     gtk.enable = true;
-    catppuccin = {
-      enable = true;
-      autoEnable = true;
-      flavor = "mocha";
-      accent = "pink";
-    };
+    catppuccin =
+      theme
+      // {
+        cursors = {
+          enable = true;
+          accent = "dark";
+        };
+      };
 
     programs.foot = {
       enable = true;
@@ -379,7 +381,6 @@
     };
     programs.ghostty = {
       enable = true;
-      enableFishIntegration = true;
       settings.font-family = "JetBrainsMono Nerd Font";
     };
   };

@@ -22,11 +22,7 @@
   # Allow unfree packages (Discord, spotify, etc.)
   nixpkgs.config.allowUnfree = true;
 
-  environment.systemPackages = with pkgs; [
-    # Add system-level tools here if needed
-    helix
-    tree
-  ];
+  environment.systemPackages = [pkgs.helix];
 
   # Let Determinate Nix handle Nix Configuration
   nix.enable = false;
@@ -161,10 +157,7 @@
     nerd-fonts.fira-code
     nerd-fonts.jetbrains-mono
     nerd-fonts.meslo-lg
-
-    # Regular versions (optional)
     fira-code
-    # jetbrains-mono
   ];
 
   # System state version

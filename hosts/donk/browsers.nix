@@ -17,10 +17,6 @@
       Value = false;
       Status = "locked";
     };
-    lock-true = {
-      Value = true;
-      Status = "locked";
-    };
     lock-empty-string = {
       Value = "";
       Status = "locked";
