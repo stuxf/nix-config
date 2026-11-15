@@ -40,12 +40,16 @@
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
+    # Its X11 bell module segfaults whenever Xwayland exits
+    extraConfig.pipewire."10-no-x11-bell"."context.properties"."module.x11.bell" = false;
   };
 
   services.printing.enable = true;
   services.cloudflare-warp.enable = true;
   # From unstable (stable lags); back to stable once 26.05 has 2026.8.2115.0
   nixpkgs.overlays = [(final: _: {inherit (final.unstable) cloudflare-warp;})];
+  # It runs /usr/sbin/nft; unstable's module has the same bind
+  systemd.services.cloudflare-warp.serviceConfig.BindReadOnlyPaths = ["${pkgs.nftables}/bin/nft:/usr/sbin/nft"];
   # Resolve tailnet names outside WARP
   systemd.services.warp-tailnet-dns = {
     description = "Resolve tailnet names outside WARP";
