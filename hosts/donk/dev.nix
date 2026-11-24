@@ -66,9 +66,16 @@
         exec ${inputs.cua.packages.${pkgs.stdenv.hostPlatform.system}.cua-driver}/bin/cua-driver "$@"
       '';
     };
+
+    # Second account (same home as chatgpt-2)
+    codex2 = pkgs.writeShellApplication {
+      name = "codex2";
+      text = ''CODEX_HOME=$HOME/.codex-2 exec ${pkgs.codex}/bin/codex "$@"'';
+    };
   in {
     home.file.".claude/CLAUDE.md".text = agentInstructions;
     home.file.".codex/AGENTS.md".text = agentInstructions;
+    home.file.".codex-2/AGENTS.md".text = agentInstructions;
 
     programs.bash.enable = true;
 
@@ -116,6 +123,7 @@
       # Agents
       claude-code
       codex
+      codex2
       cuaDriver
     ];
   };
